@@ -1,0 +1,826 @@
+[org 0x0100]
+ 
+ jmp start
+
+;__________________Necessary Declarations____________*/
+tickcount: dw 0
+oldisr:dd 0, 0
+score:db 'Score := ',0
+GameOverMessage:db 'Game Over',0
+SCORE:dw 0
+press_start:db '__Press Any Key To Start__ ',0
+instruction:db '->The TREX GAMEPLAY',0
+instruction1:db '->Use Space Key To Make Trex Jump ',0
+instruction2:db '->Jump Over The Hurdles ',0
+instruction3:db '->Reach High Score And Get Prize ',0
+instruction4:db '______Enjoying :) ___________',0
+SOURCE:db 'Source Person :=',0
+UMAR:db 'UMAR KHATAB',0
+CSD:db 'BCS_3D',0
+L192765:db '19L_2765',0
+FAST:db 'FAST NUCES LHR',0
+
+;___Body Shape______
+lrh:dw 0x067C  ;left right part of head
+ulh:dw 0x062D   ;upper lower part of head
+body:dw 0x067C
+lleg:dw 0x062F
+rleg:dw 0x065C
+eyes:dw 0x062E
+
+;____Extra Counters_____
+HeadPosition:dw 0
+hurdlesPat:dw 10
+legsPosition:dw 0
+bodyPosition:dw 0
+HurdlesPosition:dw 0
+
+;___________Declarations Ended_______________*/
+
+
+
+;_________________________UTILITY Functions_________
+; _________________Delay,board etc________________*/
+Draw_Horizontal_Line:
+
+push bp
+mov bp,sp
+push ax
+push es
+push di
+push cx
+
+mov ax,0xb800
+mov es,ax
+mov di,[bp+4]
+mov cx,80
+mov ax,0x477C
+
+HLloop:
+mov [es:di],ax
+add di,2
+loop HLloop
+
+pop cx
+pop di
+pop es
+pop ax
+pop bp
+ret 2
+
+
+Draw_Vertical_Line:
+
+push bp
+mov bp,sp
+push ax
+push es
+push di
+push cx
+
+mov ax,0xb800
+mov es,ax
+mov di,[bp+4]
+mov cx,25
+mov ax,0x477C
+
+VLloop:
+mov [es:di],ax
+add di,160
+loop  VLloop
+
+pop cx
+pop di
+pop es
+pop ax
+pop bp
+ret 2
+
+
+
+Draw_Boundaries:
+
+mov ax,0
+push ax
+call Draw_Horizontal_Line
+
+mov ax,3840
+push ax
+call Draw_Horizontal_Line
+
+mov ax,0
+push ax
+call Draw_Vertical_Line
+
+mov ax,158
+push ax
+call Draw_Vertical_Line
+
+ret
+
+start_Message:
+mov ax,30
+push ax
+mov ax,10
+push ax
+mov si,press_start
+push si
+call printstr
+
+mov ah,0
+int 16h
+
+
+ret
+
+Display_Instructions:
+
+
+mov ax,4
+push ax
+mov ax,1
+push ax
+mov si,SOURCE
+push si
+call printstr
+
+mov ax,4
+push ax
+mov ax,3
+push ax
+mov si,UMAR
+push si
+call printstr
+
+mov ax,4
+push ax
+mov ax,4
+push ax
+mov si,CSD
+push si
+call printstr
+
+mov ax,4
+push ax
+mov ax,5
+push ax
+mov si,L192765
+push si
+call printstr
+
+mov ax,4
+push ax
+mov ax,6
+push ax
+mov si,FAST
+push si
+call printstr
+
+
+mov ax,30
+push ax
+mov ax,1
+push ax
+mov si,instruction
+push si
+call printstr
+
+
+
+mov ax,26
+push ax
+mov ax,3
+push ax
+mov si,instruction1
+push si
+call printstr
+
+mov ax,26
+push ax
+mov ax,4
+push ax
+mov si,instruction2
+push si
+call printstr
+
+mov ax,26
+push ax
+mov ax,5
+push ax
+mov si,instruction3
+push si
+call printstr
+
+mov ax,31
+push ax
+mov ax,8
+push ax
+mov si,instruction4
+push si
+call printstr
+ret
+
+clrscr:
+push ax
+push es
+push di
+mov ax,0xb800
+mov es,ax
+
+xor di,di
+
+mov ax,0x1720
+mov cx,480
+cld 
+repe stosw
+
+mov ax,0x472D
+mov cx,160
+cld  
+repe stosw
+
+mov ax,0x0720
+mov cx,1360
+cld 
+repe stosw
+
+
+pop di
+pop es
+pop ax
+
+ret
+
+clrscr2:
+push ax
+push es
+push di
+mov ax,0xb800
+mov es,ax
+
+mov di,160
+
+mov ax,0x1720
+mov cx,480
+cld 
+repe stosw
+
+mov ax,0x472D
+mov cx,160
+cld  
+repe stosw
+
+mov ax,0x0720
+mov cx,1360
+cld 
+repe stosw
+
+
+pop di
+pop es
+pop ax
+
+ret
+
+
+bigdelay:
+push cx
+mov cx,6
+;a delay loop
+bl1:
+call delay
+loop bl1
+pop cx
+ret
+
+delay:
+push cx
+mov cx,100000
+;a delay loop
+l2:
+loop l2
+pop cx
+ret
+
+
+;_________________________Utilities End_________________*/
+
+
+;/*_______________String Print________________________*/
+
+strlen:
+push bp
+mov bp,sp
+push cx
+push si
+push ax
+
+mov si,[bp+4]
+mov cx,0
+xor al,al
+l1:
+cmp byte [si],al
+je ret_len
+add si,1
+add cx,1
+jmp  l1
+
+ret_len:
+mov [bp+6],cx
+
+pop ax
+pop si
+pop cx
+pop bp
+ret 2
+
+
+printstr:
+push bp
+mov bp,sp
+push si
+push di
+push ax
+push cx
+
+mov si,[bp+4]
+mov di,80
+mov ax,[bp+6]
+mul di
+mov di,ax
+add di,[bp+8]
+shl di,1
+
+push ax
+push si
+call strlen
+pop cx
+
+mov ax,0xb800
+mov es,ax
+mov ah,0x70
+printloop:
+mov al,[si]
+mov word [es:di],ax
+add si,1
+add di,2
+loop printloop
+
+pop cx
+pop ax
+pop di
+pop si
+pop bp
+ret 6
+
+
+;/*_________________________________________________*/
+
+
+
+;/*______________Number Printing_______________*/
+printnum:
+ push bp
+ mov bp, sp
+ push es
+ push ax
+ push bx
+ push cx
+ push dx
+ push di
+ mov ax, 0xb800
+ mov es, ax ; point es to video base
+ mov ax, [bp+6] ; load number in ax
+ mov bx, 10 ; use base 10 for division
+ mov cx, 0 ; initialize count of digits
+nextdigit: mov dx, 0 ; zero upper half of dividend
+ div bx ; divide by 10
+ add dl, 0x30 ; convert digit into ascii value
+ push dx ; save ascii value on stack
+ inc cx ; increment count of values
+ cmp ax, 0 ; is the quotient zero
+ jnz nextdigit ; if no divide it again
+ mov di, [bp+4] ; point di to req column
+
+nextpos: 
+ pop dx ; remove a digit from the stack
+ mov dh, 0x47 ; use normal attribute
+ mov [es:di], dx ; print char on screen
+ add di, 2 ; move to next screen location
+ loop nextpos ; repeat for all digits on stack
+ pop di
+ pop dx
+ pop cx
+ pop bx
+ pop ax
+ pop es
+ pop bp
+ ret 4
+ 
+
+;/___________________Number Preinting End________________________/ 
+ 
+
+
+
+printScore:
+
+ push 60
+ push 10
+ mov ax,score
+ push ax
+ call printstr
+ 
+
+ mov word cx,[cs:SCORE]
+ push cx
+ mov ax,10
+ mov bx,80
+ mul bx
+ add ax,60
+ shl ax,1
+ add ax,18
+ push ax
+ call printnum ;print score 
+ 
+ ret
+
+;__________________________Conclusion of Game ______________*/
+isAlive:
+push ax
+push bx
+push dx
+mov word ax,[cs:bodyPosition]
+mov word bx,[cs:legsPosition]
+mov word dx,[cs:HurdlesPosition]
+cmp ax,dx
+je StopGame
+add ax,2
+cmp ax,dx
+je StopGame
+add ax,2
+cmp ax,dx
+je StopGame
+
+mov cx,2
+lp2:
+cmp bx,dx
+je StopGame
+add bx,2
+loop lp2
+
+add bx,158
+
+mov cx,2
+lp3:
+cmp bx,dx
+je StopGame
+add bx,2
+loop lp3
+
+pop dx
+pop bx
+pop ax
+ret
+
+StopGame:
+
+call clrscr2
+call Draw_Trex
+call Draw_Boundaries
+CALL Display_Instructions
+call printScore
+push 30
+push 15
+mov si,GameOverMessage
+push si
+call printstr
+call bigdelay
+
+lastloop:
+
+jmp lastloop
+jmp _terminateGame
+
+;____________________Conclusion Ends____________________*/
+
+;___________________TREX Functions_________________________*/
+
+Draw_Trex:
+push ax
+push bx
+push di
+
+mov ax,80
+mov word bx,[cs:HeadPosition]
+mul bx
+shl ax,1
+add ax,20
+mov di,ax
+
+;___drawing Trex____
+
+ ;face
+sub di,158
+mov ax,[ulh]
+mov [es:di-2],ax
+mov [es:di],ax
+mov [es:di+2],ax
+
+add di,158
+mov si,di
+sub di,2
+mov ax,[lrh]
+mov  word[es:di],ax
+add di,6
+mov word[es:di],ax
+
+mov ax,[eyes]
+mov [es:si],ax
+add si,2
+mov [es:si],ax
+
+sub di,2
+add di,158
+mov ax,[ulh]
+mov [es:di],ax
+mov [es:di],ax
+mov [es:di+2],ax
+;body
+add di,160
+
+mov word[cs:bodyPosition],di
+mov ax,[body]
+mov [es:di],ax
+add di,2
+mov [es:di],ax
+
+;legs
+add di,158
+mov ax,[lleg]
+mov [es:di],ax
+
+mov bx,di
+mov word[cs:legsPosition],bx
+
+add di,2
+mov ax,[rleg]
+mov [es:di],ax
+
+
+
+pop di
+pop bx
+pop ax
+ret
+
+
+Clear_Trex:
+push es
+push ax
+push cx
+push bx
+push di
+
+mov ax,0xb800
+mov es,ax
+
+mov cx,25
+mov ax,[cs:HeadPosition]
+sub word cx,ax
+
+;ax has row number
+mov bx,80
+mul bx
+shl ax,1
+mov di,ax
+sub di,160
+add cx,1
+add di,16
+mov ax,0x0720
+sub di,160
+
+clearOuterLoop:
+push cx
+mov si,di
+mov cx,5
+clearInnerloop:
+mov word [es:si],ax
+add si,2
+loop clearInnerloop
+
+pop cx
+add di,160
+loop clearOuterLoop
+
+pop di
+pop bx
+pop ax
+pop cx
+pop es
+ret
+
+
+bounce_TREX:
+call movUP
+call bigdelay
+call movDown
+ret
+
+movUP:
+push cx
+mov cx,5
+
+movUPLoop:
+push cx
+call isAlive
+call Clear_Trex
+dec word[cs:HeadPosition]
+call Draw_Trex
+call bigdelay
+call Draw_Hurdles
+call Draw_Hurdles
+pop cx
+loop movUPLoop
+
+pop cx
+ret
+
+movDown:
+push cx
+mov cx,5
+movDownLoop:
+push cx
+call isAlive
+call Clear_Trex
+inc word[cs:HeadPosition]
+call Draw_Trex
+call bigdelay
+call Draw_Hurdles
+call Draw_Hurdles
+
+pop cx
+
+loop movDownLoop
+
+pop cx
+ret
+;_____________________TREX FUNCs End_______________________*/
+
+
+;_______________________ISRS____________________*/
+kbisr: 
+ push ax
+ push es
+ mov ax, 0xb800
+ mov es, ax ; point es to video memory
+ in al, 0x60 ; read a char from keyboard port
+ cmp al, 0xB9 ; is the key left shift
+ jne nomatch ; no, try next comparison
+ call bounce_TREX
+ 
+nomatch:
+ mov al, 0x20
+ out 0x20, al ; send EOI to PIC
+ pop es
+ pop ax
+ iret
+ 
+
+timer: 
+ push ax 
+ push cx
+ call printScore
+ _ret:
+ call Draw_Boundaries
+ call Draw_Hurdles
+ call Draw_Hurdles
+ call Display_Instructions
+ mov al, 0x20
+ out 0x20, al ; end of interrupt
+ pop cx
+ pop ax 
+ call isAlive
+ iret 
+
+
+
+
+;_________________________Hurdles Functions_______________*/
+Draw_Hurdles:
+
+push ax
+push bx
+push di
+push si
+push cx
+
+mov ax,0xb800
+mov es,ax
+
+mov bx,20
+mov ax,80
+mul bx
+shl ax,1
+mov di,ax
+;Clearing Last Ending State of Hurdle
+mov word [es:di+4],0x0720
+mov word [es:di+6],0x0720
+mov word [es:di+160+4],0x0720
+mov word [es:di+160+6],0x0720
+
+add di,156
+
+mov word bx,[cs:hurdlesPat]
+sub word di,bx
+
+;
+mov word[cs:HurdlesPosition],di
+mov ax,0x477C
+mov word [es:di],ax
+add di,2
+mov word [es:di],ax
+add di,158
+mov word [es:di],ax
+add di,2
+mov word [es:di],ax
+
+add word[cs:hurdlesPat],2
+mov si,di
+
+mov word[es:si+2],0x0720
+;mov word[es:si+4],0x0720
+sub si,160
+mov word[es:si+2],0x0720
+;mov word[es:si+4],0x0720
+
+cmp word[cs:hurdlesPat],154
+jne shudIncreaseScores
+mov word bx,[cs:hurdlesPat]
+mov word[hurdlesPat],0
+
+shudIncreaseScores:
+cmp word bx,140
+jne doret
+
+_IncreaseScores:
+ inc word[cs:SCORE]
+
+doret:
+
+
+pop cx
+pop si
+pop di
+pop bx
+pop ax
+
+ret
+
+;_______________________Hurdles End____________________*/
+
+start:
+ call clrscr
+ mov word[cs:HeadPosition],18
+ call Display_Instructions
+ call start_Message 
+ call clrscr
+ call Draw_Trex
+ xor ax, ax
+ mov cx,0 
+ mov es, ax ; point es to IVT base
+ cli ; disable interrupts
+ 
+ 
+ mov [oldisr] ,ax
+ mov word ax,[es:8*4+2]
+ mov [oldisr+2] ,ax
+ 
+ mov word [es:8*4], timer; store offset at n*4
+ mov [es:8*4+2], cs ; store segment at n*4+2
+ sti ; enable interrupts
+
+ cli
+ mov word ax,[es:9*4]
+ mov [oldisr+4] ,ax
+ 
+ mov word ax,[es:9*4+2]
+ mov [oldisr+6] ,ax
+ 
+ mov word [es:9*4], kbisr ; store offset at n*4
+ mov [es:9*4+2], cs 
+ sti ; enable interrupts
+ 
+
+
+mainLoop: jmp mainLoop
+ 
+ 
+_terminateGame:
+ cli 
+ 
+ jmp far [cs:oldisr]
+ jmp far [cs:oldisr+4]
+ sti
+ mov ax,0x4c00
+ int 21h
